@@ -1,0 +1,270 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f3f4f6;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .header-right a {
+            margin-left: 20px;
+            text-decoration: none;
+            color: #1d4ed8;
+            font-weight: bold;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .question {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 30px;
+        }
+
+        .question h3 {
+            margin-top: 0;
+            color: #1e3a8a;
+        }
+
+        .question small a,
+        .answer small a {
+            color: #1d4ed8;
+            text-decoration: underline;
+        }
+
+        .question-footer {
+            border-top: 1px solid #e5e7eb;
+            margin-top: 15px;
+            padding-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background-color: #e5e7eb;
+            color: #1f2937;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 14px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-right: 10px;
+            margin-top: 5px;
+        }
+
+        .btn:hover {
+            background-color: #d1d5db;
+        }
+
+        .answers-container {
+            margin-top: 12px;
+            padding: 12px 15px;
+            background-color: #f9fafb;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .answer {
+            padding-top: 12px;
+            border-top: 1px solid #ddd;
+            margin-top: 12px;
+        }
+
+        .reply {
+            margin-left: 20px;
+            margin-top: 6px;
+            padding: 8px;
+            background: #f1f5f9;
+            border-radius: 6px;
+        }
+
+        .reply strong {
+            color: #1d4ed8;
+        }
+
+        .form-inline {
+            margin-top: 10px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            margin-top: 5px;
+        }
+
+        .sort-bar {
+            margin-bottom: 25px;
+        }
+
+        .sort-bar a {
+            margin-right: 15px;
+            color: #1d4ed8;
+            text-decoration: none;
+        }
+
+        .sort-bar a.active {
+            font-weight: bold;
+        }
+
+        .sort-bar .reset-sort {
+            color: #9ca3af;
+            margin-left: 10px;
+        }
+
+        .sort-bar .reset-sort:hover {
+            color: #111827;
+        }
+
+        button {
+            margin-top: 6px;
+            background-color: #1d4ed8;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #2563eb;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h2>Welcome, {{ request.user.username }}</h2>
+    <div class="header-right">
+        <a href="{% url 'post_question' %}">+ Ask Question</a>
+        <a href="{% url 'user_profile' request.user.username %}">My Profile</a>
+        <a href="{% url 'logout' %}">Logout</a>
+    </div>
+</header>
+
+<div class="container">
+
+    <div class="sort-bar">
+        <strong>Sort by:</strong>
+        <a href="?sort=recent" class="{% if active_sort == 'recent' %}active{% endif %}">Recent</a>
+        <a href="?sort=answers" class="{% if active_sort == 'answers' %}active{% endif %}">Most Answered</a>
+        <a href="?sort=likes" class="{% if active_sort == 'likes' %}active{% endif %}">Most Liked</a>
+        {% if active_sort != 'recent' %}
+            <a href="{% url 'dashboard' %}" class="reset-sort">Reset</a>
+        {% endif %}
+    </div>
+
+    {% for q in questions %}
+        <div class="question">
+            <h3><a href="{% url 'question_detail' q.id %}">{{ q.title }}</a></h3>
+            <p>{{ q.description|truncatewords:20 }}</p>
+
+            <small>
+                By: <a href="{% url 'user_profile' q.author.username %}">{{ q.author.username }}</a>
+                | {{ q.total_answers }} Answers
+                | {{ q.total_likes }} Likes
+            </small>
+
+            <div class="question-footer">
+                <form method="post" action="{% url 'toggle_question_like' q.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn">
+                        {% if q.id in user_liked_qids %} 👍 Unlike {% else %} 👍 Like {% endif %}
+                    </button>
+                </form>
+
+                <button type="button" class="btn" onclick="toggleAnswers('{{ q.id }}', this)">Show Answers</button>
+            </div>
+
+            <div id="answers-{{ q.id }}" class="answers-container">
+                {% for a in q.answers.all %}
+                    <div class="answer">
+                        <p>{{ a.content }}</p>
+                        <small>By: <a href="{% url 'user_profile' a.author.username %}">{{ a.author.username }}</a> | Likes: {{ a.likes_count }}</small>
+
+                        <form method="post" action="{% url 'toggle_like' a.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn">
+                                {% if a.id in user_liked_answer_ids %} ❤️ Unlike {% else %} 🤍 Like {% endif %}
+                            </button>
+                        </form>
+
+                        {% for c in a.comments.all %}
+                            <div class="reply">
+                                <p><strong>{{ c.author.username }}</strong> {{ c.text }}</p>
+                            </div>
+                        {% endfor %}
+
+                        <form method="post" class="form-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="answer_id" value="{{ a.id }}">
+                            <input type="hidden" name="question_id" value="{{ q.id }}">
+                            <textarea name="text" rows="2" placeholder="Reply to this answer..."></textarea>
+                            <button type="submit" name="comment_submit">Reply</button>
+                        </form>
+                    </div>
+                {% endfor %}
+
+                <form method="post" class="form-inline" style="margin-top: 20px;">
+                    {% csrf_token %}
+                    <textarea name="content" rows="3" placeholder="Write your answer..."></textarea>
+                    <input type="hidden" name="question_id" value="{{ q.id }}">
+                    <button type="submit" name="answer_submit">Post Answer</button>
+                </form>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<script>
+    function toggleAnswers(qid, btn) {
+        const section = document.getElementById(`answers-${qid}`);
+        if (section.style.display === "none" || section.style.display === "") {
+            section.style.display = "block";
+            if (btn) btn.textContent = "Hide Answers";
+        } else {
+            section.style.display = "none";
+            if (btn) btn.textContent = "Show Answers";
+        }
+    }
+
+    // Auto-open on redirect
+    window.onload = function () {
+        const params = new URLSearchParams(window.location.search);
+        const openId = params.get("open");
+        if (openId) {
+            const section = document.getElementById(`answers-${openId}`);
+            if (section) {
+                section.style.display = "block";
+                const btn = document.querySelector(`button[onclick*='${openId}']`);
+                if (btn) btn.textContent = "Hide Answers";
+            }
+        }
+    }
+</script>
+
+</body>
+</html>

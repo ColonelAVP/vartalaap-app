@@ -1,0 +1,140 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ question.title }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f3f4f6;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        h2, h3, h4 {
+            color: #1e3a8a;
+            margin-bottom: 10px;
+        }
+
+        small a {
+            color: #1d4ed8;
+            text-decoration: underline;
+        }
+
+        button {
+            background-color: #1d4ed8;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #2563eb;
+        }
+
+        .meta {
+            color: #555;
+            margin-top: 10px;
+        }
+
+        .answer {
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+        }
+
+        textarea, input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            margin-top: 5px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            color: #1d4ed8;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .comments-block {
+            margin-left: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>{{ question.title }}</h2>
+    <p>{{ question.description }}</p>
+    <div class="meta">
+        By: <a href="{% url 'user_profile' question.author.username %}">{{ question.author.username }}</a>
+        | {{ question.likes.count }} Likes
+    </div>
+
+    {% if request.user == question.author %}
+        <p>
+            <a href="{% url 'edit_question' question.id %}">Edit Question</a> |
+            <a href="{% url 'delete_question' question.id %}">Delete Question</a>
+        </p>
+    {% endif %}
+
+    <h3>Answers:</h3>
+    {% for ans in answers %}
+        <div class="answer">
+            <p>{{ ans.content }}</p>
+            <small>
+                By: <a href="{% url 'user_profile' ans.author.username %}">{{ ans.author.username }}</a>
+            </small>
+
+            {% if request.user == ans.author %}
+                <p>
+                    <a href="{% url 'edit_answer' ans.id %}">Edit</a> |
+                    <a href="{% url 'delete_answer' ans.id %}">Delete</a>
+                </p>
+            {% endif %}
+
+            <h4>Comments:</h4>
+            <div class="comments-block">
+                {% for comment in ans.comments.all %}
+                    <p><strong>{{ comment.author.username }}:</strong> {{ comment.text }}</p>
+                {% empty %}
+                    <p><em>No comments yet.</em></p>
+                {% endfor %}
+            </div>
+        </div>
+    {% empty %}
+        <p>No answers yet.</p>
+    {% endfor %}
+
+    <hr>
+    <h3>Your Answer:</h3>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Submit Answer</button>
+    </form>
+
+    <a href="{% url 'dashboard' %}" class="back-link">&larr; Back to Dashboard</a>
+</div>
+
+</body>
+</html>

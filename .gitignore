@@ -1,0 +1,16 @@
+__pycache__/
+.env
+*.pyc
+*.sqlite3
+*.log
+*.DS_Store
+.vscode/
+.idea/
+.envrc
+.env.*
+*.egg-info/
+venv/
+spatialenv/
+.env
+docker-volume/
+pgdata/

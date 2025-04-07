@@ -1,0 +1,164 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ profile_user.username }}'s Profile</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f3f4f6;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background: white;
+            padding: 15px 30px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        h2 {
+            color: #1e3a8a;
+        }
+
+        .section {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 30px;
+        }
+
+        .question, .answer {
+            margin-bottom: 20px;
+        }
+
+        .question a, .answer a {
+            color: #1d4ed8;
+            text-decoration: underline;
+            font-weight: bold;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            text-decoration: none;
+            color: #1d4ed8;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .section h3 {
+            margin-top: 0;
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 10px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            margin-top: 5px;
+        }
+
+        button {
+            background-color: #1d4ed8;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        button:hover {
+            background-color: #2563eb;
+        }
+
+        small {
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h2>{{ profile_user.username }}'s Profile</h2>
+</header>
+
+<div class="container">
+
+    <div class="section">
+        <h3>Profile Info</h3>
+
+        {% if request.user == profile_user %}
+            <form method="post">
+                {% csrf_token %}
+                <label for="first_name">First Name:</label>
+                <input type="text" name="first_name" value="{{ profile_user.first_name }}">
+
+                <label for="last_name">Last Name:</label>
+                <input type="text" name="last_name" value="{{ profile_user.last_name }}">
+
+                <label for="gender">Gender:</label>
+                <select name="gender">
+                    <option value="Male" {% if profile_user.gender == 'Male' %}selected{% endif %}>Male</option>
+                    <option value="Female" {% if profile_user.gender == 'Female' %}selected{% endif %}>Female</option>
+                    <option value="Other" {% if profile_user.gender == 'Other' %}selected{% endif %}>Other</option>
+                </select>
+
+                <label for="bio">Bio:</label>
+                <textarea name="bio" rows="3">{{ profile_user.bio }}</textarea>
+
+                <button type="submit" name="update_profile">Update Profile</button>
+            </form>
+        {% else %}
+            <p><strong>Name:</strong> {{ profile_user.first_name }} {{ profile_user.last_name }}</p>
+            <p><strong>Gender:</strong> {{ profile_user.gender }}</p>
+            <p><strong>Bio:</strong> {{ profile_user.bio }}</p>
+        {% endif %}
+    </div>
+
+    <div class="section">
+        <h3>Your Questions</h3>
+        {% for q in questions %}
+            <div class="question">
+                <a href="{% url 'question_detail' q.id %}">{{ q.title }}</a>
+                <p>{{ q.description|truncatewords:20 }}</p>
+            </div>
+        {% empty %}
+            <p><em>No questions yet.</em></p>
+        {% endfor %}
+    </div>
+
+    <div class="section">
+        <h3>Your Answers</h3>
+        {% for a in answers %}
+            <div class="answer">
+                <p>{{ a.content|linebreaks }}</p>
+                <small>Answered on <a href="{% url 'question_detail' a.question.id %}">{{ a.question.title }}</a></small>
+            </div>
+        {% empty %}
+            <p><em>No answers yet.</em></p>
+        {% endfor %}
+    </div>
+
+    <a href="{% url 'dashboard' %}" class="back-link">&larr; Back to Dashboard</a>
+</div>
+
+</body>
+</html>
